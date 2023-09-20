@@ -94,4 +94,25 @@ def create_dataset(args):
         dataset = LMDBDataset(root=args.datadir, name='ffhq',
                               train=True, transform=train_transform)
 
+    elif args.dataset == 'dehaze_cs_256':
+        from .cityscapes import DehazeCityscapesDataset
+        train_transform = transforms.Compose([
+            transforms.Resize((args.image_size, args.image_size)),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        ])
+        dataset = DehazeCityscapesDataset(root=args.datadir, mode="train", transform=train_transform)
+
+    elif args.dataset == 'dehaze_rs_256':
+        from .cityscapes import RSHaze, PairCompose, PairRandomCrop, PairRandomHorizontalFlip, PairToTensor
+        train_transform = PairCompose([
+            # transforms.Resize((args.image_size, args.image_size)),
+            PairRandomCrop(args.image_size),
+            PairRandomHorizontalFlip(),
+            PairToTensor(),
+            # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        ])
+        dataset = RSHaze(mode="train", transform=train_transform)
+
     return dataset

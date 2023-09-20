@@ -30,7 +30,6 @@ def grad_penalty_call(args, D_real, x_t):
     grad_penalty.backward()
 
 
-# %%
 def train(rank, gpu, args):
     from EMA import EMA
     from score_sde.models.discriminator import Discriminator_large, Discriminator_small
@@ -119,7 +118,7 @@ def train(rank, gpu, args):
     pos_coeff = Posterior_Coefficients(args, device)
     T = get_time_schedule(args, device)
 
-    if args.resume or os.path.exists(os.path.join(exp_path, 'content.pth')):
+    if args.resume and os.path.exists(os.path.join(exp_path, 'content.pth')):
         checkpoint_file = os.path.join(exp_path, 'content.pth')
         checkpoint = torch.load(checkpoint_file, map_location=device)
         init_epoch = checkpoint['epoch']
@@ -152,6 +151,13 @@ def train(rank, gpu, args):
 
             # sample from p(x_0)
             x0 = x.to(device, non_blocking=True)
+
+            if args.dataset.startswith("dehaze"):
+                x0 = torch.cat([x0, y.to(device, non_blocking=True)], dim=1)
+            elif args.dataset == "cifar10":
+                x0 = torch.cat([x0] * 2, dim=1)
+            else:
+                pass
 
             if not args.use_pytorch_wavelet:
                 for i in range(num_levels):
@@ -257,13 +263,27 @@ def train(rank, gpu, args):
                 real_data = iwt(
                     real_data[:, :3], real_data[:, 3:6], real_data[:, 6:9], real_data[:, 9:12])
             else:
-                fake_sample = iwt((fake_sample[:, :3], [torch.stack(
-                    (fake_sample[:, 3:6], fake_sample[:, 6:9], fake_sample[:, 9:12]), dim=2)]))
-                real_data = iwt((real_data[:, :3], [torch.stack(
-                    (real_data[:, 3:6], real_data[:, 6:9], real_data[:, 9:12]), dim=2)]))
+                chunk_size = fake_sample.shape[1] // 4
+                fake_sample = iwt((
+                    fake_sample[:, :chunk_size],
+                    [torch.stack((
+                        fake_sample[:, chunk_size:chunk_size*2],
+                        fake_sample[:, chunk_size*2:chunk_size*3],
+                        fake_sample[:, chunk_size*3:chunk_size*4]), dim=2)]
+                    ))
+                real_data = iwt((
+                    real_data[:, :chunk_size],
+                    [torch.stack((
+                        real_data[:, chunk_size:chunk_size*2],
+                        real_data[:, chunk_size*2:chunk_size*3],
+                        real_data[:, chunk_size*3:chunk_size*4]), dim=2)]
+                    ))
 
             fake_sample = (torch.clamp(fake_sample, -1, 1) + 1) / 2  # 0-1
             real_data = (torch.clamp(real_data, -1, 1) + 1) / 2  # 0-1
+
+            fake_sample = fake_sample[:, :3]
+            real_data = real_data[:, :3]
 
             torchvision.utils.save_image(fake_sample, os.path.join(
                 exp_path, 'sample_discrete_epoch_{}.png'.format(epoch)))
@@ -291,7 +311,6 @@ def train(rank, gpu, args):
                         store_params_in_ema=True)
 
 
-# %%
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('ddgan parameters')
     parser.add_argument('--seed', type=int, default=1024,

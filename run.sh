@@ -22,8 +22,8 @@ if [[ $MODE == train ]]; then
 	echo "==> Training WaveDiff"
 
 	if [[ $DATASET == cifar10 ]]; then
-		python train_wddgan.py --dataset cifar10 --exp wddgan_cifar10_exp1_noatn_g122_d3_recloss_1800ep --num_channels 12 --num_channels_dae 128 --num_timesteps 4 \
-			--num_res_blocks 2 --batch_size 256 --num_epoch 1800 --ngf 64 --nz 100 --z_emb_dim 256 --n_mlp 4 --embedding_type positional \
+		python train_wddgan.py --dataset cifar10 --exp wddgan_cifar10_exp1_noatn_g122_d3_recloss_1800ep_20230726 --num_channels 24 --num_channels_dae 128 --num_timesteps 4 \
+			--num_res_blocks 2 --batch_size 256 --num_epoch 1800 --ngf 128 --nz 100 --z_emb_dim 256 --n_mlp 4 --embedding_type positional \
 			--use_ema --ema_decay 0.9999 --r1_gamma 0.02 --lr_d 1.25e-4 --lr_g 1.6e-4 --lazy_reg 15 \
 			--ch_mult 1 2 2 --save_content --datadir ./data/cifar-10 \
 			--master_port $MASTER_PORT --num_process_per_node $GPUS \
@@ -43,7 +43,7 @@ if [[ $MODE == train ]]; then
 	elif [[ $DATASET == celeba_256 ]]; then
 		python train_wddgan.py --dataset celeba_256 --image_size 256 --exp wddgan_celebahq_exp1_atn16_wg12224_d5_recloss_500ep --num_channels 12 --num_channels_dae 64 --ch_mult 1 2 2 2 4 --num_timesteps 2 \
 			--num_res_blocks 2 --batch_size 32 --num_epoch 500 --ngf 64 --embedding_type positional --use_ema --r1_gamma 2. \
-			--z_emb_dim 256 --lr_d 1e-4 --lr_g 2e-4 --lazy_reg 10 --save_content --datadir data/celeba/celeba-lmdb/ \
+			--z_emb_dim 256 --lr_d 1e-4 --lr_g 2e-4 --lazy_reg 10 --save_content --datadir /data/data/celeba/celeba-lmdb/ \
 			--master_port $MASTER_PORT --num_process_per_node $GPUS \
 			--current_resolution 128 --attn_resolution 16 --num_disc_layers 5 --rec_loss \
 			--save_content_every 10 \
@@ -84,7 +84,7 @@ if [[ $MODE == train ]]; then
 else
 	echo "==> Testing WaveDiff"
 	if [[ $DATASET == cifar10 ]]; then \
-		python test_wddgan.py --dataset cifar10 --exp wddgan_cifar10_exp1_noatn_g122_d3_recloss_1800ep --num_channels 12 --num_channels_dae 128 --num_timesteps 4 \
+		python test_wddgan.py --dataset cifar10 --exp wddgan_cifar10_exp1_noatn_g122_d3_recloss_1800ep_20230726 --num_channels 24 --num_channels_dae 128 --num_timesteps 4 \
 			--num_res_blocks 2 --nz 100 --z_emb_dim 256 --n_mlp 4 --ch_mult 1 2 2 --epoch_id 1300 \
 			--image_size 32 --current_resolution 16 --attn_resolutions 32 \
 			--use_pytorch_wavelet \
